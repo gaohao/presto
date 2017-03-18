@@ -71,6 +71,7 @@ public class AvroRowDecoder
                         avroRecord = datumReader.read(null, DecoderFactory.get().binaryDecoder(new ByteArrayInputStream(data), null));
                     }
                     catch (Exception e) {
+                        e.printStackTrace();
                         return true;
                     }
                 }
@@ -86,6 +87,9 @@ public class AvroRowDecoder
     {
         Object value = element;
         for (String pathElement : Splitter.on('/').omitEmptyStrings().split(columnHandle.getMapping())) {
+            if (value == null) {
+                return null;
+            }
             value = ((GenericRecord) value).get(pathElement);
         }
         return value;

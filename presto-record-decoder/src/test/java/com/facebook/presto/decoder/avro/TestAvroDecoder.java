@@ -20,6 +20,7 @@ import com.facebook.presto.decoder.FieldValueProvider;
 
 import com.facebook.presto.spi.type.BigintType;
 import com.facebook.presto.spi.type.BooleanType;
+import com.facebook.presto.spi.type.DoubleType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.apache.avro.io.Encoder;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.facebook.presto.decoder.util.DecoderTestUtil.checkIsNull;
 import static com.facebook.presto.decoder.util.DecoderTestUtil.checkValue;
 import static com.facebook.presto.spi.type.VarcharType.createVarcharType;
 import static org.testng.Assert.assertEquals;
@@ -74,6 +76,8 @@ public class TestAvroDecoder
         Encoder e = EncoderFactory.get().binaryEncoder(os, null);
         dataWriter.write(message, e);
         e.flush();
+        byte[] data = os.toByteArray();
+        os.close();
 
         String schemaStr = Message.getClassSchema().toString();
         AvroRowDecoder rowDecoder = new AvroRowDecoder();
@@ -86,7 +90,7 @@ public class TestAvroDecoder
         List<DecoderColumnHandle> columns = ImmutableList.of(row1, row2, row3, row4, row5);
         Set<FieldValueProvider> providers = new HashSet<>();
 
-        boolean corrupt = rowDecoder.decodeRow(os.toByteArray(), null, providers, columns, buildMap(columns));
+        boolean corrupt = rowDecoder.decodeRow(data, null, providers, columns, buildMap(columns));
         assertFalse(corrupt);
 
         assertEquals(providers.size(), columns.size());
@@ -96,5 +100,52 @@ public class TestAvroDecoder
         checkValue(providers, row3, 493857959588286460L);
         checkValue(providers, row4, 7630);
         checkValue(providers, row5, true);
+    }
+
+    @Test
+    public void testNonExistent()
+            throws Exception
+    {
+        User user = User.newBuilder()
+                .setId(null)
+                .setIdStr(null)
+                .setScreenName(null)
+                .setStatusesCount(null)
+                .setGeoEnabled(null)
+                .build();
+        Message message = Message.newBuilder()
+                .setId(null)
+                .setIdStr(null)
+                .setCreatedAt(null)
+                .setSource(null)
+                .setUser(user)
+                .build();
+        SpecificDatumWriter<Message> dataWriter = new SpecificDatumWriter<>(Message.getClassSchema());
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        Encoder e = EncoderFactory.get().binaryEncoder(os, null);
+        dataWriter.write(message, e);
+        e.flush();
+        byte[] data = os.toByteArray();
+        os.close();
+
+        String schemaStr = Message.getClassSchema().toString();
+        AvroRowDecoder rowDecoder = new AvroRowDecoder();
+        DecoderTestColumnHandle row1 = new DecoderTestColumnHandle("", 0, "row1", createVarcharType(100), "very/deep/varchar", schemaStr, null, false, false, false);
+        DecoderTestColumnHandle row2 = new DecoderTestColumnHandle("", 1, "row2", BigintType.BIGINT, "no_bigint", schemaStr, null, false, false, false);
+        DecoderTestColumnHandle row3 = new DecoderTestColumnHandle("", 2, "row3", DoubleType.DOUBLE, "double/is_missing", schemaStr, null, false, false, false);
+        DecoderTestColumnHandle row4 = new DecoderTestColumnHandle("", 3, "row4", BooleanType.BOOLEAN, "hello", schemaStr, null, false, false, false);
+
+        List<DecoderColumnHandle> columns = ImmutableList.of(row1, row2, row3, row4);
+        Set<FieldValueProvider> providers = new HashSet<>();
+
+        boolean corrupt = rowDecoder.decodeRow(data, null, providers, columns, buildMap(columns));
+        assertFalse(corrupt);
+
+        assertEquals(providers.size(), columns.size());
+
+        checkIsNull(providers, row1);
+        checkIsNull(providers, row2);
+        checkIsNull(providers, row3);
+        checkIsNull(providers, row4);
     }
 }

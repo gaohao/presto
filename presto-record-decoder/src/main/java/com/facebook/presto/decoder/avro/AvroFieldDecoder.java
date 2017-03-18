@@ -56,7 +56,6 @@ public class AvroFieldDecoder
     public FieldValueProvider decode(Object value, DecoderColumnHandle columnHandle)
     {
         requireNonNull(columnHandle, "columnHandle is null");
-        requireNonNull(value, "value is null");
         return new ObjectValueProvider(value, columnHandle);
     }
 

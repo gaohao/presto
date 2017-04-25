@@ -34,7 +34,7 @@ public class ProtobufRowDecoder
 {
     public static final String NAME = "protobuf";
 
-    private Method method;
+//    private Method method;
 
     @Override
     public String getName()
@@ -50,6 +50,7 @@ public class ProtobufRowDecoder
             Map<DecoderColumnHandle, FieldDecoder<?>> fieldDecoders)
     {
         GeneratedMessage protoRecord = null;
+        Method method = null;
 
         for (DecoderColumnHandle columnHandle : columnHandles) {
             if (columnHandle.isInternal()) {
@@ -87,7 +88,15 @@ public class ProtobufRowDecoder
         for (String pathElement : Splitter.on('/').omitEmptyStrings().split(columnHandle.getMapping())) {
             Descriptors.FieldDescriptor fieldDescriptor = ((GeneratedMessage) value).getDescriptorForType()
                                                             .findFieldByName(pathElement);
-            value = ((GeneratedMessage) value).getField(fieldDescriptor);
+            GeneratedMessage gm = (GeneratedMessage) value;
+            value = null;
+            // if field does not exist, just return null
+            if (fieldDescriptor != null && fieldDescriptor.isRepeated() || gm.hasField(fieldDescriptor)) {
+                value = gm.getField(fieldDescriptor);
+            }
+            if (value == null) {
+                return null;
+            }
         }
         return value;
     }

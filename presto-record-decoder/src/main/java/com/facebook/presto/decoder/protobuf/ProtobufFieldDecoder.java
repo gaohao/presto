@@ -37,7 +37,7 @@ public class ProtobufFieldDecoder
     @Override
     public Set<Class<?>> getJavaTypes()
     {
-        return ImmutableSet.of(boolean.class, long.class, double.class, Slice.class);
+        return ImmutableSet.of(boolean.class, long.class, int.class, double.class, Slice.class);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class ProtobufFieldDecoder
     public FieldValueProvider decode(Object value, DecoderColumnHandle columnHandle)
     {
         requireNonNull(columnHandle, "columnHandle is null");
-        requireNonNull(value, "value is null");
+//        requireNonNull(value, "value is null");
         return new ObjectValueProvider(value, columnHandle);
     }
 
@@ -100,6 +100,12 @@ public class ProtobufFieldDecoder
         public long getLong()
         {
             return isNull() ? 0L : (Long) value;
+        }
+
+        @Override
+        public int getInteger()
+        {
+            return isNull() ? 0 : (Integer) value;
         }
 
         @Override

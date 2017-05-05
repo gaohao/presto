@@ -114,6 +114,18 @@ public final class KafkaTopicFieldDescription
                 false);
     }
 
+    KafkaTopicFieldDescription getKafkaTopicFieldDescription(String dataFormat)
+    {
+        return new KafkaTopicFieldDescription(
+                getName(),
+                getType(),
+                getMapping(),
+                getComment(),
+                dataFormat,
+                getFormatHint(),
+                isHidden());
+    }
+
     ColumnMetadata getColumnMetadata()
     {
         return new ColumnMetadata(getName(), getType(), getComment(), isHidden());

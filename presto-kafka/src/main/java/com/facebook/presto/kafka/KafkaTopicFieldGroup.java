@@ -18,13 +18,13 @@ import com.facebook.presto.spi.type.BooleanType;
 import com.facebook.presto.spi.type.VarcharType;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Descriptors;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
@@ -47,9 +47,30 @@ public class KafkaTopicFieldGroup
             @JsonProperty("fields") List<KafkaTopicFieldDescription> fields)
     {
         this.dataFormat = requireNonNull(dataFormat, "dataFormat is null");
-        this.dataSchema = dataSchema;
         this.dynamic = dynamic == null ? false : dynamic;
-        this.fields = fields == null ? null : ImmutableList.copyOf(fields);
+        if (!isDynamic()) {
+            this.dataSchema = dataSchema;
+            List<KafkaTopicFieldDescription> newFields = requireNonNull(fields, "fields is null").stream()
+                    .map(field -> field.getKafkaTopicFieldDescription(getDataSchema()))
+                    .collect(Collectors.toList());
+
+            this.fields = ImmutableList.copyOf(newFields);
+        }
+        else {
+            // dataSchema is required if use dynamic schema
+            this.dataSchema = requireNonNull(dataSchema, "dataSchema is null");
+            List<KafkaTopicFieldDescription> newFields = new ArrayList<>();
+            try {
+                Class<?> clazz = Class.forName(getDataSchema());
+                Method getDescriptorMethod = clazz.getDeclaredMethod("getDescriptor");
+                Descriptors.Descriptor descriptor = (Descriptors.Descriptor) getDescriptorMethod.invoke(null);
+                generateFields(newFields, descriptor, "", "");
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+            this.fields = ImmutableList.copyOf(newFields);
+        }
     }
 
     @JsonProperty
@@ -65,30 +86,14 @@ public class KafkaTopicFieldGroup
     }
 
     @JsonProperty
+    public boolean isDynamic()
+    {
+        return dynamic;
+    }
+
+    @JsonProperty
     public List<KafkaTopicFieldDescription> getFields()
     {
-        if (!Strings.isNullOrEmpty(getDataSchema())) {
-            if (dynamic) {
-                List<KafkaTopicFieldDescription> newFields = new ArrayList<>();
-                try {
-                    Class<?> clazz = Class.forName(getDataSchema());
-                    Method getDescriptorMethod = clazz.getDeclaredMethod("getDescriptor");
-                    Descriptors.Descriptor descriptor = (Descriptors.Descriptor) getDescriptorMethod.invoke(null);
-                    generateFields(newFields, descriptor, "", "");
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return newFields;
-            }
-            else {
-                List<KafkaTopicFieldDescription> newFields = new ArrayList<>();
-                for (KafkaTopicFieldDescription field : fields) {
-                    newFields.add(field.getKafkaTopicFieldDescription(getDataSchema()));
-                }
-                return newFields;
-            }
-        }
         return fields;
     }
 

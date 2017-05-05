@@ -34,8 +34,6 @@ public class ProtobufRowDecoder
 {
     public static final String NAME = "protobuf";
 
-//    private Method method;
-
     @Override
     public String getName()
     {

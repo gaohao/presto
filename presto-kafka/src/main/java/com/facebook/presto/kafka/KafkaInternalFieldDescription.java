@@ -26,6 +26,7 @@ import io.airlift.slice.Slices;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.facebook.presto.kafka.KafkaColumnHandle.ColumnType;
 import static com.facebook.presto.spi.type.VarcharType.createUnboundedVarcharType;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -131,14 +132,13 @@ public class KafkaInternalFieldDescription
     KafkaColumnHandle getColumnHandle(String connectorId, int index, boolean hidden)
     {
         return new KafkaColumnHandle(connectorId,
-                index,
                 getName(),
                 getType(),
                 null,
                 null,
                 null,
                 false,
-                hidden,
+                ColumnType.REGULAR,
                 true);
     }
 

@@ -96,12 +96,22 @@ public class KafkaInternalFieldDescription
      */
     public static final KafkaInternalFieldDescription KEY_LENGTH_FIELD = new KafkaInternalFieldDescription("_key_length", BigintType.BIGINT, "Total number of key bytes");
 
+    /**
+     * <tt>_key_length</tt> - length in bytes of the key.
+     */
+    public static final KafkaInternalFieldDescription TIMESTAMP = new KafkaInternalFieldDescription("_timestamp", BigintType.BIGINT, "timestamp");
+
+    public static final KafkaInternalFieldDescription PARTITION_ID = new KafkaInternalFieldDescription("partition_id", BigintType.BIGINT, "partition key");
+    public static final KafkaInternalFieldDescription OFFSET_START = new KafkaInternalFieldDescription("offset_start", BigintType.BIGINT, "partition key");
+    public static final KafkaInternalFieldDescription OFFSET_END = new KafkaInternalFieldDescription("offset_end", BigintType.BIGINT, "partition key");
+
     public static Set<KafkaInternalFieldDescription> getInternalFields()
     {
         return ImmutableSet.of(PARTITION_ID_FIELD, PARTITION_OFFSET_FIELD,
                 SEGMENT_START_FIELD, SEGMENT_END_FIELD, SEGMENT_COUNT_FIELD,
                 KEY_FIELD, KEY_CORRUPT_FIELD, KEY_LENGTH_FIELD,
-                MESSAGE_FIELD, MESSAGE_CORRUPT_FIELD, MESSAGE_LENGTH_FIELD);
+                MESSAGE_FIELD, MESSAGE_CORRUPT_FIELD, MESSAGE_LENGTH_FIELD,
+                PARTITION_ID, OFFSET_START, OFFSET_END);
     }
 
     private final String name;
@@ -129,7 +139,7 @@ public class KafkaInternalFieldDescription
         return type;
     }
 
-    KafkaColumnHandle getColumnHandle(String connectorId, int index, boolean hidden)
+    KafkaColumnHandle getColumnHandle(String connectorId, int index)
     {
         return new KafkaColumnHandle(connectorId,
                 getName(),

@@ -14,7 +14,6 @@
 package com.facebook.presto.kafka;
 
 import com.facebook.presto.spi.ColumnHandle;
-import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.ConnectorTableHandle;
 import com.facebook.presto.spi.Constraint;
 import com.facebook.presto.spi.HostAddress;
@@ -32,11 +31,9 @@ import kafka.javaapi.TopicMetadataRequest;
 import kafka.javaapi.TopicMetadataResponse;
 import kafka.javaapi.consumer.SimpleConsumer;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static com.facebook.presto.kafka.KafkaColumnHandle.ColumnType;
 import static com.facebook.presto.kafka.KafkaUtil.findAllOffsets;
 import static com.facebook.presto.kafka.KafkaUtil.selectRandom;
 import static java.util.Objects.requireNonNull;
@@ -70,6 +67,7 @@ public class KafkaPartitionManager
 
     public KafkaPartitionResult getPartitions(ConnectorTableHandle tableHandle, Constraint<ColumnHandle> constraint)
     {
+        KafkaTableHandle kafkaTableHandle = (KafkaTableHandle) tableHandle;
         ImmutableList.Builder<KafkaPartition> partitions = ImmutableList.builder();
         List<KafkaColumnHandle> partitionColumns = getPartitionColumns(tableHandle);
         SimpleConsumer simpleConsumer = consumerManager.getConsumer(selectRandom(nodes));
@@ -79,8 +77,6 @@ public class KafkaPartitionManager
 
         for (TopicMetadata metadata : topicMetadataResponse.topicsMetadata()) {
             for (PartitionMetadata part : metadata.partitionsMetadata()) {
-                log.debug("Adding Partition %s/%s", metadata.topic(), part.partitionId());
-
                 Broker leader = part.leader();
                 if (leader == null) { // Leader election going on...
                     log.warn("No leader for partition %s/%s found!", metadata.topic(), part.partitionId());
@@ -95,11 +91,15 @@ public class KafkaPartitionManager
                 long[] offsets = findAllOffsets(leaderConsumer,  metadata.topic(), part.partitionId());
 
                 for (int i = offsets.length - 1; i > 0; i--) {
-                    ImmutableMap.Builder<ColumnHandle, NullableValue> keysBuilder = ImmutableMap.builder();
-                    keysBuilder.put(partitionColumns.get(0), NullableValue.of(BigintType.BIGINT, (long) part.partitionId()));
-                    keysBuilder.put(partitionColumns.get(1), NullableValue.of(BigintType.BIGINT, offsets[i]));
-                    keysBuilder.put(partitionColumns.get(2), NullableValue.of(BigintType.BIGINT, offsets[i - 1]));
-                    partitions.add(new KafkaPartition(keysBuilder.build()));
+                    ImmutableMap.Builder<ColumnHandle, NullableValue> partitionValuesBuilder = ImmutableMap.builder();
+                    partitionValuesBuilder.put(partitionColumns.get(0), NullableValue.of(BigintType.BIGINT, (long) part.partitionId()));
+                    partitionValuesBuilder.put(partitionColumns.get(1), NullableValue.of(BigintType.BIGINT, offsets[i]));
+                    partitionValuesBuilder.put(partitionColumns.get(2), NullableValue.of(BigintType.BIGINT, offsets[i - 1]));
+                    ImmutableMap<ColumnHandle, NullableValue> partitionValues = partitionValuesBuilder.build();
+                    if (constraint.predicate().test(partitionValues)) {
+                        log.debug("Adding Partition %s/%s", metadata.topic(), part.partitionId());
+                        partitions.add(new KafkaPartition(partitionValues, partitionLeader, part.partitionId(), offsets[i], offsets[i - 1]));
+                    }
                 }
             }
         }
@@ -107,30 +107,13 @@ public class KafkaPartitionManager
         return new KafkaPartitionResult(partitionColumns, partitions.build());
     }
 
-    public List<ColumnMetadata> getPartitionColumnsMetadata()
-    {
-        List<ColumnMetadata> partitionColumns = new ArrayList<>();
-        partitionColumns.add(new ColumnMetadata("partition_id", BigintType.BIGINT, "partition key", "partition key", false));
-        partitionColumns.add(new ColumnMetadata("offset_start", BigintType.BIGINT, "offset start", "partition key", false));
-        partitionColumns.add(new ColumnMetadata("offset_end", BigintType.BIGINT, "offset end", "partition key", false));
-        return partitionColumns;
-    }
-
-    public List<ColumnHandle> getPartitionColumns(ConnectorTableHandle tableHandle, Constraint<ColumnHandle> constraint)
-    {
-        List<ColumnHandle> partitionColumns = new ArrayList<>();
-        partitionColumns.add(new KafkaColumnHandle(connectorId, "partition_id", BigintType.BIGINT, null, null, null, false, ColumnType.PARTITION_KEY, true));
-        partitionColumns.add(new KafkaColumnHandle(connectorId, "offset_start", BigintType.BIGINT, null, null, null, false, ColumnType.PARTITION_KEY, true));
-        partitionColumns.add(new KafkaColumnHandle(connectorId, "offset_end", BigintType.BIGINT, null, null, null, false, ColumnType.PARTITION_KEY, true));
-        return partitionColumns;
-    }
 
     public List<KafkaColumnHandle> getPartitionColumns(ConnectorTableHandle tableHandle)
     {
         ImmutableList.Builder<KafkaColumnHandle> partitionColumns = ImmutableList.builder();
-        partitionColumns.add(new KafkaColumnHandle(connectorId, "partition_id", BigintType.BIGINT, null, null, null, false, ColumnType.PARTITION_KEY, true));
-        partitionColumns.add(new KafkaColumnHandle(connectorId, "offset_start", BigintType.BIGINT, null, null, null, false, ColumnType.PARTITION_KEY, true));
-        partitionColumns.add(new KafkaColumnHandle(connectorId, "offset_end", BigintType.BIGINT, null, null, null, false, ColumnType.PARTITION_KEY, true));
+        partitionColumns.add(KafkaInternalFieldDescription.PARTITION_ID.getColumnHandle(connectorId, 0));
+        partitionColumns.add(KafkaInternalFieldDescription.OFFSET_START.getColumnHandle(connectorId, 0));
+        partitionColumns.add(KafkaInternalFieldDescription.OFFSET_END.getColumnHandle(connectorId, 0));
         return partitionColumns.build();
     }
 }

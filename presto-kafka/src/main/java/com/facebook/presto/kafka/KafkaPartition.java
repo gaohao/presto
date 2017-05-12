@@ -14,6 +14,7 @@
 package com.facebook.presto.kafka;
 
 import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.spi.HostAddress;
 import com.facebook.presto.spi.predicate.NullableValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -26,23 +27,54 @@ import static java.util.Objects.requireNonNull;
 public class KafkaPartition
 {
     private final Map<ColumnHandle, NullableValue> keys;
-
-    public KafkaPartition()
-    {
-        this(ImmutableMap.of());
-    }
+    private final HostAddress partitionLeader;
+    private final int partitionId;
+    private final long offsetStart;
+    private final long offsetEnd;
 
     @JsonCreator
     public KafkaPartition(
-            @JsonProperty Map<ColumnHandle, NullableValue> keys
+            @JsonProperty Map<ColumnHandle, NullableValue> keys,
+            @JsonProperty HostAddress partitionLeader,
+            @JsonProperty int partitionId,
+            @JsonProperty long offsetStart,
+            @JsonProperty long offsetEnd
     )
     {
         this.keys = ImmutableMap.copyOf(requireNonNull(keys, "keys is null"));
+        this.partitionLeader = requireNonNull(partitionLeader, "partitionLeader is null");
+        this.partitionId = requireNonNull(partitionId,  "partitionLeader is null");
+        this.offsetStart = requireNonNull(offsetStart,  "offsetStart is null");
+        this.offsetEnd = requireNonNull(offsetEnd,  "offsetEnd is null");
     }
 
     @JsonProperty
     public Map<ColumnHandle, NullableValue> getKeys()
     {
         return keys;
+    }
+
+    @JsonProperty
+    public HostAddress getPartitionLeader()
+    {
+        return partitionLeader;
+    }
+
+    @JsonProperty
+    public int getPartitionId()
+    {
+        return partitionId;
+    }
+
+    @JsonProperty
+    public long getOffsetStart()
+    {
+        return offsetStart;
+    }
+
+    @JsonProperty
+    public long getOffsetEnd()
+    {
+        return offsetEnd;
     }
 }

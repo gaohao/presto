@@ -42,7 +42,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static com.facebook.presto.kafka.KafkaColumnHandle.ColumnType;
 import static com.facebook.presto.kafka.KafkaHandleResolver.convertColumnHandle;
 import static com.facebook.presto.kafka.KafkaHandleResolver.convertTableHandle;
 import static java.util.Objects.requireNonNull;
@@ -164,20 +163,8 @@ public class KafkaMetadata
             }
         }
 
-        for (ColumnMetadata columnMetadata : partitionManager.getPartitionColumnsMetadata()) {
-            columnHandles.put(columnMetadata.getName(), new KafkaColumnHandle(connectorId,
-                    columnMetadata.getName(),
-                    columnMetadata.getType(),
-                    null,
-                    null,
-                    null,
-                    false,
-                    ColumnType.PARTITION_KEY,
-                    true));
-        }
-
         for (KafkaInternalFieldDescription kafkaInternalFieldDescription : internalFieldDescriptions) {
-            columnHandles.put(kafkaInternalFieldDescription.getName(), kafkaInternalFieldDescription.getColumnHandle(connectorId, index++, hideInternalColumns));
+            columnHandles.put(kafkaInternalFieldDescription.getName(), kafkaInternalFieldDescription.getColumnHandle(connectorId, index++));
         }
 
         return columnHandles.build();
@@ -284,8 +271,8 @@ public class KafkaMetadata
             }
         }
 
-        // Get partition columns
-        builder.addAll(partitionManager.getPartitionColumnsMetadata());
+//        // Get partition columns
+//        builder.addAll(partitionManager.getPartitionColumnsMetadata());
 
         for (KafkaInternalFieldDescription fieldDescription : internalFieldDescriptions) {
             builder.add(fieldDescription.getColumnMetadata(hideInternalColumns));

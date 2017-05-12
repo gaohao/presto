@@ -24,20 +24,14 @@ import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.airlift.log.Logger;
-import kafka.cluster.Broker;
-import kafka.javaapi.PartitionMetadata;
-import kafka.javaapi.TopicMetadata;
-import kafka.javaapi.TopicMetadataRequest;
-import kafka.javaapi.TopicMetadataResponse;
-import kafka.javaapi.consumer.SimpleConsumer;
 
 import javax.inject.Inject;
 
+import java.util.List;
 import java.util.Set;
 
 import static com.facebook.presto.kafka.KafkaHandleResolver.convertLayout;
-import static com.facebook.presto.kafka.KafkaUtil.findAllOffsets;
-import static com.facebook.presto.kafka.KafkaUtil.selectRandom;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -71,45 +65,19 @@ public class KafkaSplitManager
         KafkaTableHandle kafkaTableHandle = convertLayout(layout).getTable();
         KafkaTableLayoutHandle layoutHandle = (KafkaTableLayoutHandle) layout;
 
-        SimpleConsumer simpleConsumer = consumerManager.getConsumer(selectRandom(nodes));
+        List<KafkaPartition> partitions = layoutHandle.getPartitions();
+        ImmutableList<ConnectorSplit> splits = partitions.stream()
+                .map(partition -> new KafkaSplit(
+                                connectorId,
+                                kafkaTableHandle.getTopicName(),
+                                kafkaTableHandle.getKeyDataFormat(),
+                                kafkaTableHandle.getMessageDataFormat(),
+                                partition.getPartitionId(),
+                                partition.getOffsetStart(),
+                                partition.getOffsetEnd(),
+                                partition.getPartitionLeader()))
+                .collect(toImmutableList());
 
-        TopicMetadataRequest topicMetadataRequest = new TopicMetadataRequest(ImmutableList.of(kafkaTableHandle.getTopicName()));
-        TopicMetadataResponse topicMetadataResponse = simpleConsumer.send(topicMetadataRequest);
-
-        ImmutableList.Builder<ConnectorSplit> splits = ImmutableList.builder();
-
-        for (TopicMetadata metadata : topicMetadataResponse.topicsMetadata()) {
-            for (PartitionMetadata part : metadata.partitionsMetadata()) {
-                log.debug("Adding Partition %s/%s", metadata.topic(), part.partitionId());
-
-                Broker leader = part.leader();
-                if (leader == null) { // Leader election going on...
-                    log.warn("No leader for partition %s/%s found!", metadata.topic(), part.partitionId());
-                    continue;
-                }
-
-                HostAddress partitionLeader = HostAddress.fromParts(leader.host(), leader.port());
-
-                SimpleConsumer leaderConsumer = consumerManager.getConsumer(partitionLeader);
-                // Kafka contains a reverse list of "end - start" pairs for the splits
-
-                long[] offsets = findAllOffsets(leaderConsumer,  metadata.topic(), part.partitionId());
-
-                for (int i = offsets.length - 1; i > 0; i--) {
-                    KafkaSplit split = new KafkaSplit(
-                            connectorId,
-                            metadata.topic(),
-                            kafkaTableHandle.getKeyDataFormat(),
-                            kafkaTableHandle.getMessageDataFormat(),
-                            part.partitionId(),
-                            offsets[i],
-                            offsets[i - 1],
-                            partitionLeader);
-                    splits.add(split);
-                }
-            }
-        }
-
-        return new FixedSplitSource(splits.build());
+        return new FixedSplitSource(splits);
     }
 }

@@ -17,7 +17,8 @@ import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
-public class KafkaPartitionResult {
+public class KafkaPartitionResult
+{
     private final List<KafkaColumnHandle> partitionColumns;
     private final List<KafkaPartition> partitions;
 

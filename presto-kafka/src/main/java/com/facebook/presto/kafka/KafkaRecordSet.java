@@ -81,7 +81,10 @@ public class KafkaRecordSet
         this.globalInternalFieldValueProviders = ImmutableSet.of(
                 KafkaInternalFieldDescription.PARTITION_ID_FIELD.forLongValue(split.getPartitionId()),
                 KafkaInternalFieldDescription.SEGMENT_START_FIELD.forLongValue(split.getStart()),
-                KafkaInternalFieldDescription.SEGMENT_END_FIELD.forLongValue(split.getEnd()));
+                KafkaInternalFieldDescription.SEGMENT_END_FIELD.forLongValue(split.getEnd()),
+                KafkaInternalFieldDescription.PARTITION_ID.forLongValue(split.getEnd()),
+                KafkaInternalFieldDescription.OFFSET_START.forLongValue(split.getStart()),
+                KafkaInternalFieldDescription.OFFSET_END.forLongValue(split.getStart()));
 
         this.consumerManager = requireNonNull(consumerManager, "consumerManager is null");
 
@@ -304,7 +307,7 @@ public class KafkaRecordSet
         private void openFetchRequest()
         {
             if (messageAndOffsetIterator == null) {
-                log.debug("Fetching %d bytes from offset %d (%d - %d). %d messages read so far", KAFKA_READ_BUFFER_SIZE, cursorOffset, split.getStart(), split.getEnd(), totalMessages);
+                log.debug("Fetching %d bytes from offset %d, %d: (%d - %d). %d messages read so far", KAFKA_READ_BUFFER_SIZE, cursorOffset, split.getPartitionId(), split.getStart(), split.getEnd(), totalMessages);
                 FetchRequest req = new FetchRequestBuilder()
                         .clientId("presto-worker-" + Thread.currentThread().getName())
                         .addFetch(split.getTopicName(), split.getPartitionId(), cursorOffset, KAFKA_READ_BUFFER_SIZE)

@@ -72,7 +72,7 @@ public class KafkaPartitionManager
         List<KafkaColumnHandle> partitionColumns = getPartitionColumns(tableHandle);
         SimpleConsumer simpleConsumer = consumerManager.getConsumer(selectRandom(nodes));
 
-        TopicMetadataRequest topicMetadataRequest = new TopicMetadataRequest(ImmutableList.of("event"));
+        TopicMetadataRequest topicMetadataRequest = new TopicMetadataRequest(ImmutableList.of(kafkaTableHandle.getTopicName()));
         TopicMetadataResponse topicMetadataResponse = simpleConsumer.send(topicMetadataRequest);
 
         for (TopicMetadata metadata : topicMetadataResponse.topicsMetadata()) {
@@ -106,7 +106,6 @@ public class KafkaPartitionManager
 
         return new KafkaPartitionResult(partitionColumns, partitions.build());
     }
-
 
     public List<KafkaColumnHandle> getPartitionColumns(ConnectorTableHandle tableHandle)
     {

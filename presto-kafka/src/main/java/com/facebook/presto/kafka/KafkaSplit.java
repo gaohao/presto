@@ -42,6 +42,7 @@ public class KafkaSplit
     private final long start;
     private final long end;
     private final HostAddress leader;
+    private final long timestamp;
 
     @JsonCreator
     public KafkaSplit(
@@ -52,7 +53,8 @@ public class KafkaSplit
             @JsonProperty("partitionId") int partitionId,
             @JsonProperty("start") long start,
             @JsonProperty("end") long end,
-            @JsonProperty("leader") HostAddress leader)
+            @JsonProperty("leader") HostAddress leader,
+            @JsonProperty("timestamp") long timestamp)
     {
         this.connectorId = requireNonNull(connectorId, "connector id is null");
         this.topicName = requireNonNull(topicName, "topicName is null");
@@ -62,6 +64,7 @@ public class KafkaSplit
         this.start = start;
         this.end = end;
         this.leader = requireNonNull(leader, "leader address is null");
+        this.timestamp = timestamp;
     }
 
     @JsonProperty
@@ -80,6 +83,12 @@ public class KafkaSplit
     public long getEnd()
     {
         return end;
+    }
+
+    @JsonProperty
+    public long getTimestamp()
+    {
+        return timestamp;
     }
 
     @JsonProperty
@@ -142,6 +151,7 @@ public class KafkaSplit
                 .add("start", start)
                 .add("end", end)
                 .add("leader", leader)
+                .add("timestamp", timestamp)
                 .toString();
     }
 }

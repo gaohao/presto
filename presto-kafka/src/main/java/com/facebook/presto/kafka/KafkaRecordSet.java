@@ -84,7 +84,8 @@ public class KafkaRecordSet
                 KafkaInternalFieldDescription.SEGMENT_END_FIELD.forLongValue(split.getEnd()),
                 KafkaInternalFieldDescription.PARTITION_ID.forLongValue(split.getPartitionId()),
                 KafkaInternalFieldDescription.OFFSET_START.forLongValue(split.getStart()),
-                KafkaInternalFieldDescription.OFFSET_END.forLongValue(split.getEnd()));
+                KafkaInternalFieldDescription.OFFSET_END.forLongValue(split.getEnd()),
+                KafkaInternalFieldDescription.TIMESTAMP.forLongValue(split.getTimestamp()));
 
         this.consumerManager = requireNonNull(consumerManager, "consumerManager is null");
 

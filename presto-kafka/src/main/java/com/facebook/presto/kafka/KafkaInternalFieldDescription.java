@@ -99,8 +99,7 @@ public class KafkaInternalFieldDescription
     /**
      * <tt>_key_length</tt> - length in bytes of the key.
      */
-    public static final KafkaInternalFieldDescription TIMESTAMP = new KafkaInternalFieldDescription("_timestamp", BigintType.BIGINT, "timestamp");
-
+    public static final KafkaInternalFieldDescription TIMESTAMP = new KafkaInternalFieldDescription("_timestamp", BigintType.BIGINT, "partition key");
     public static final KafkaInternalFieldDescription PARTITION_ID = new KafkaInternalFieldDescription("partition_id", BigintType.BIGINT, "partition key");
     public static final KafkaInternalFieldDescription OFFSET_START = new KafkaInternalFieldDescription("offset_start", BigintType.BIGINT, "partition key");
     public static final KafkaInternalFieldDescription OFFSET_END = new KafkaInternalFieldDescription("offset_end", BigintType.BIGINT, "partition key");
@@ -111,7 +110,7 @@ public class KafkaInternalFieldDescription
                 SEGMENT_START_FIELD, SEGMENT_END_FIELD, SEGMENT_COUNT_FIELD,
                 KEY_FIELD, KEY_CORRUPT_FIELD, KEY_LENGTH_FIELD,
                 MESSAGE_FIELD, MESSAGE_CORRUPT_FIELD, MESSAGE_LENGTH_FIELD,
-                PARTITION_ID, OFFSET_START, OFFSET_END);
+                PARTITION_ID, OFFSET_START, OFFSET_END, TIMESTAMP);
     }
 
     private final String name;

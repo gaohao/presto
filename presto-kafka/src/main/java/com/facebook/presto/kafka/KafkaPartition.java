@@ -31,6 +31,7 @@ public class KafkaPartition
     private final int partitionId;
     private final long offsetStart;
     private final long offsetEnd;
+    private final long timestamp;
 
     @JsonCreator
     public KafkaPartition(
@@ -38,7 +39,8 @@ public class KafkaPartition
             @JsonProperty HostAddress partitionLeader,
             @JsonProperty int partitionId,
             @JsonProperty long offsetStart,
-            @JsonProperty long offsetEnd
+            @JsonProperty long offsetEnd,
+            @JsonProperty long timestamp
     )
     {
         this.keys = ImmutableMap.copyOf(requireNonNull(keys, "keys is null"));
@@ -46,6 +48,7 @@ public class KafkaPartition
         this.partitionId = requireNonNull(partitionId,  "partitionLeader is null");
         this.offsetStart = requireNonNull(offsetStart,  "offsetStart is null");
         this.offsetEnd = requireNonNull(offsetEnd,  "offsetEnd is null");
+        this.timestamp = requireNonNull(timestamp,  "timestamp is null");
     }
 
     @JsonProperty
@@ -76,5 +79,11 @@ public class KafkaPartition
     public long getOffsetEnd()
     {
         return offsetEnd;
+    }
+
+    @JsonProperty
+    public long getTimestamp()
+    {
+        return timestamp;
     }
 }

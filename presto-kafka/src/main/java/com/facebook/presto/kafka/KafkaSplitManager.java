@@ -75,7 +75,8 @@ public class KafkaSplitManager
                                 partition.getPartitionId(),
                                 partition.getOffsetStart(),
                                 partition.getOffsetEnd(),
-                                partition.getPartitionLeader()))
+                                partition.getPartitionLeader(),
+                                partition.getTimestamp()))
                 .collect(toImmutableList());
 
         return new FixedSplitSource(splits);

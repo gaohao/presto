@@ -70,12 +70,17 @@ public class KafkaConnectorConfig
     private boolean hideInternalColumns = true;
 
     /**
-     * Seed nodes for Kafka cluster. At least one must exist.
+     * Whether enable the metastore or not. Default is no.
      */
-    private String metastoreHost = null;
+    private boolean metastoreEnabled = false;
 
     /**
-     * Seed nodes for Kafka cluster. At least one must exist.
+     * redis host
+     */
+    private String metastoreHost = "localhost";
+
+    /**
+     *redis database index
      */
     private int metastoreIndex = 0;
 
@@ -129,6 +134,18 @@ public class KafkaConnectorConfig
     {
         this.nodes = (nodes == null) ? null : parseNodes(nodes);
         return this;
+    }
+
+    @Config("kafka.metastore.enabled")
+    public KafkaConnectorConfig setMetastoreEnabled(boolean metastoreEnabled)
+    {
+        this.metastoreEnabled = metastoreEnabled;
+        return this;
+    }
+
+    public boolean getMetastoreEnabled()
+    {
+        return metastoreEnabled;
     }
 
     @Config("kafka.metastore.host")

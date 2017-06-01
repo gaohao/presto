@@ -102,12 +102,19 @@ public class KafkaMetadata
                 schemaTableName.getTableName(),
                 table.getTopicName(),
                 getDataFormat(table.getKey()),
-                getDataFormat(table.getMessage()));
+                getDataSchema(table.getKey()),
+                getDataFormat(table.getMessage()),
+                getDataSchema(table.getMessage()));
     }
 
     private static String getDataFormat(KafkaTopicFieldGroup fieldGroup)
     {
         return (fieldGroup == null) ? DummyRowDecoder.NAME : fieldGroup.getDataFormat();
+    }
+
+    private static String getDataSchema(KafkaTopicFieldGroup fieldGroup)
+    {
+        return (fieldGroup == null) ? null : fieldGroup.getDataSchema();
     }
 
     @Override

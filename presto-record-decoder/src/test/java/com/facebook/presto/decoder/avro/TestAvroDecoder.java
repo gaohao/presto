@@ -81,16 +81,16 @@ public class TestAvroDecoder
 
         String schemaStr = Message.getClassSchema().toString();
         AvroRowDecoder rowDecoder = new AvroRowDecoder();
-        DecoderTestColumnHandle row1 = new DecoderTestColumnHandle("", 0, "row1", createVarcharType(100), "source", schemaStr, null, false, false, false);
-        DecoderTestColumnHandle row2 = new DecoderTestColumnHandle("", 1, "row2", createVarcharType(10), "user/screen_name", schemaStr, null, false, false, false);
-        DecoderTestColumnHandle row3 = new DecoderTestColumnHandle("", 2, "row3", BigintType.BIGINT, "id", schemaStr, null, false, false, false);
-        DecoderTestColumnHandle row4 = new DecoderTestColumnHandle("", 3, "row4", BigintType.BIGINT, "user/statuses_count", schemaStr, null, false, false, false);
-        DecoderTestColumnHandle row5 = new DecoderTestColumnHandle("", 4, "row5", BooleanType.BOOLEAN, "user/geo_enabled", schemaStr, null, false, false, false);
+        DecoderTestColumnHandle row1 = new DecoderTestColumnHandle("", 0, "row1", createVarcharType(100), "source", null, null, false, false, false);
+        DecoderTestColumnHandle row2 = new DecoderTestColumnHandle("", 1, "row2", createVarcharType(10), "user/screen_name", null, null, false, false, false);
+        DecoderTestColumnHandle row3 = new DecoderTestColumnHandle("", 2, "row3", BigintType.BIGINT, "id", null, null, false, false, false);
+        DecoderTestColumnHandle row4 = new DecoderTestColumnHandle("", 3, "row4", BigintType.BIGINT, "user/statuses_count", null, null, false, false, false);
+        DecoderTestColumnHandle row5 = new DecoderTestColumnHandle("", 4, "row5", BooleanType.BOOLEAN, "user/geo_enabled", null, null, false, false, false);
 
         List<DecoderColumnHandle> columns = ImmutableList.of(row1, row2, row3, row4, row5);
         Set<FieldValueProvider> providers = new HashSet<>();
 
-        boolean corrupt = rowDecoder.decodeRow(data, null, providers, columns, buildMap(columns));
+        boolean corrupt = rowDecoder.decodeRow(data, schemaStr, null, providers, columns, buildMap(columns));
         assertFalse(corrupt);
 
         assertEquals(providers.size(), columns.size());
@@ -130,15 +130,15 @@ public class TestAvroDecoder
 
         String schemaStr = Message.getClassSchema().toString();
         AvroRowDecoder rowDecoder = new AvroRowDecoder();
-        DecoderTestColumnHandle row1 = new DecoderTestColumnHandle("", 0, "row1", createVarcharType(100), "very/deep/varchar", schemaStr, null, false, false, false);
-        DecoderTestColumnHandle row2 = new DecoderTestColumnHandle("", 1, "row2", BigintType.BIGINT, "no_bigint", schemaStr, null, false, false, false);
-        DecoderTestColumnHandle row3 = new DecoderTestColumnHandle("", 2, "row3", DoubleType.DOUBLE, "double/is_missing", schemaStr, null, false, false, false);
-        DecoderTestColumnHandle row4 = new DecoderTestColumnHandle("", 3, "row4", BooleanType.BOOLEAN, "hello", schemaStr, null, false, false, false);
+        DecoderTestColumnHandle row1 = new DecoderTestColumnHandle("", 0, "row1", createVarcharType(100), "very/deep/varchar", null, null, false, false, false);
+        DecoderTestColumnHandle row2 = new DecoderTestColumnHandle("", 1, "row2", BigintType.BIGINT, "no_bigint", null, null, false, false, false);
+        DecoderTestColumnHandle row3 = new DecoderTestColumnHandle("", 2, "row3", DoubleType.DOUBLE, "double/is_missing", null, null, false, false, false);
+        DecoderTestColumnHandle row4 = new DecoderTestColumnHandle("", 3, "row4", BooleanType.BOOLEAN, "hello", null, null, false, false, false);
 
         List<DecoderColumnHandle> columns = ImmutableList.of(row1, row2, row3, row4);
         Set<FieldValueProvider> providers = new HashSet<>();
 
-        boolean corrupt = rowDecoder.decodeRow(data, null, providers, columns, buildMap(columns));
+        boolean corrupt = rowDecoder.decodeRow(data, schemaStr, null, providers, columns, buildMap(columns));
         assertFalse(corrupt);
 
         assertEquals(providers.size(), columns.size());

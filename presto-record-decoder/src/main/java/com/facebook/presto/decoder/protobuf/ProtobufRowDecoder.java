@@ -19,7 +19,7 @@ import com.facebook.presto.decoder.FieldValueProvider;
 import com.facebook.presto.decoder.RowDecoder;
 import com.google.common.base.Splitter;
 import com.google.protobuf.Descriptors;
-import com.google.protobuf.GeneratedMessage;
+import com.google.protobuf.Message;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -42,13 +42,25 @@ public class ProtobufRowDecoder
 
     @Override
     public boolean decodeRow(byte[] data,
+            String dataSchema,
             Map<String, String> dataMap,
             Set<FieldValueProvider> fieldValueProviders,
             List<DecoderColumnHandle> columnHandles,
             Map<DecoderColumnHandle, FieldDecoder<?>> fieldDecoders)
     {
-        GeneratedMessage protoRecord = null;
-        Method method = null;
+        Message protoRecord;
+        Method method;
+
+        try {
+            String className = dataSchema;
+            Class<?> clazz = Class.forName(className);
+            method = clazz.getDeclaredMethod("parseFrom", byte[].class);
+
+            protoRecord = (Message) method.invoke(null, data);
+        }
+        catch (Exception e) {
+            return true;
+        }
 
         for (DecoderColumnHandle columnHandle : columnHandles) {
             if (columnHandle.isInternal()) {
@@ -59,19 +71,6 @@ public class ProtobufRowDecoder
             FieldDecoder<Object> decoder = (FieldDecoder<Object>) fieldDecoders.get(columnHandle);
 
             if (decoder != null) {
-                if (protoRecord == null) {
-                    try {
-                        if (method == null) {
-                            String className = columnHandle.getDataFormat();
-                            Class<?> clazz = Class.forName(className);
-                            method = clazz.getDeclaredMethod("parseFrom", byte[].class);
-                        }
-                        protoRecord = (GeneratedMessage) method.invoke(null, data);
-                    }
-                    catch (Exception e) {
-                        return true;
-                    }
-                }
                 Object element = locateElement(protoRecord, columnHandle);
                 fieldValueProviders.add(decoder.decode(element, columnHandle));
             }
@@ -80,13 +79,13 @@ public class ProtobufRowDecoder
         return false;
     }
 
-    private Object locateElement(GeneratedMessage element, DecoderColumnHandle columnHandle)
+    private Object locateElement(Message element, DecoderColumnHandle columnHandle)
     {
         Object value = element;
         for (String pathElement : Splitter.on('/').omitEmptyStrings().split(columnHandle.getMapping())) {
-            Descriptors.FieldDescriptor fieldDescriptor = ((GeneratedMessage) value).getDescriptorForType()
+            Descriptors.FieldDescriptor fieldDescriptor = ((Message) value).getDescriptorForType()
                                                             .findFieldByName(pathElement);
-            GeneratedMessage gm = (GeneratedMessage) value;
+            Message gm = (Message) value;
             value = null;
             // if field does not exist, just return null
             if (fieldDescriptor != null && fieldDescriptor.isRepeated() || gm.hasField(fieldDescriptor)) {

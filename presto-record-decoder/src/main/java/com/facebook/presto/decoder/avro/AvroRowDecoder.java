@@ -36,8 +36,6 @@ public class AvroRowDecoder
 {
     public static final String NAME = "avro";
 
-    private GenericDatumReader<GenericRecord> datumReader;
-
     @Override
     public String getName()
     {
@@ -46,12 +44,24 @@ public class AvroRowDecoder
 
     @Override
     public boolean decodeRow(byte[] data,
+            String dataSchema,
             Map<String, String> dataMap,
             Set<FieldValueProvider> fieldValueProviders,
             List<DecoderColumnHandle> columnHandles,
             Map<DecoderColumnHandle, FieldDecoder<?>> fieldDecoders)
     {
-        GenericRecord avroRecord = null;
+        GenericDatumReader<GenericRecord> datumReader;
+        GenericRecord avroRecord;
+
+        try {
+            Schema schema = (new Schema.Parser()).parse(dataSchema);
+            datumReader = new GenericDatumReader<>(schema);
+
+            avroRecord = datumReader.read(null, DecoderFactory.get().binaryDecoder(new ByteArrayInputStream(data), null));
+        }
+        catch (Exception e) {
+            return true;
+        }
 
         for (DecoderColumnHandle columnHandle : columnHandles) {
             if (columnHandle.isInternal()) {
@@ -62,19 +72,6 @@ public class AvroRowDecoder
             FieldDecoder<Object> decoder = (FieldDecoder<Object>) fieldDecoders.get(columnHandle);
 
             if (decoder != null) {
-                if (avroRecord == null) {
-                    try {
-                        if (datumReader == null) {
-                            Schema schema = (new Schema.Parser()).parse(columnHandle.getDataFormat());
-                            datumReader = new GenericDatumReader<>(schema);
-                        }
-                        avroRecord = datumReader.read(null, DecoderFactory.get().binaryDecoder(new ByteArrayInputStream(data), null));
-                    }
-                    catch (Exception e) {
-                        e.printStackTrace();
-                        return true;
-                    }
-                }
                 Object element = locateElement(avroRecord, columnHandle);
                 fieldValueProviders.add(decoder.decode(element, columnHandle));
             }

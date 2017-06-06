@@ -53,6 +53,8 @@
         <dep.aws-sdk.version>1.11.30</dep.aws-sdk.version>
         <dep.tempto.version>1.31</dep.tempto.version>
         <dep.testng.version>6.10</dep.testng.version>
+        <dep.protobuf.version>2.6.1</dep.protobuf.version>
+        <dep.avro.version>1.8.1</dep.avro.version>
 
         <cli.skip-execute>true</cli.skip-execute>
         <cli.main-class>None</cli.main-class>
@@ -865,6 +867,18 @@
                 <groupId>com.facebook.presto.cassandra</groupId>
                 <artifactId>cassandra-driver</artifactId>
                 <version>3.1.4-1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${dep.protobuf.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>${dep.avro.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

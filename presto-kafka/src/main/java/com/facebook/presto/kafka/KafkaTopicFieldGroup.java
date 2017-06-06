@@ -24,7 +24,6 @@ import com.google.protobuf.Descriptors;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
@@ -46,15 +45,12 @@ public class KafkaTopicFieldGroup
             @JsonProperty("dynamic") Boolean dynamic,
             @JsonProperty("fields") List<KafkaTopicFieldDescription> fields)
     {
+        // #TODO dynamic schema only for avro or protobuf
         this.dataFormat = requireNonNull(dataFormat, "dataFormat is null");
         this.dynamic = dynamic == null ? false : dynamic;
         if (!isDynamic()) {
             this.dataSchema = dataSchema;
-            List<KafkaTopicFieldDescription> newFields = requireNonNull(fields, "fields is null").stream()
-                    .map(field -> field.getKafkaTopicFieldDescription(getDataSchema()))
-                    .collect(Collectors.toList());
-
-            this.fields = ImmutableList.copyOf(newFields);
+            this.fields = ImmutableList.copyOf(requireNonNull(fields, "fields is null"));
         }
         else {
             // dataSchema is required if use dynamic schema
@@ -104,25 +100,25 @@ public class KafkaTopicFieldGroup
             String mapping = (mappingPrefix.isEmpty() ? mappingPrefix : mappingPrefix + "/") + fd.getName();
             switch (fd.getJavaType()) {
                 case LONG:
-                    fields.add(new KafkaTopicFieldDescription(name, BigintType.BIGINT, mapping, "", getDataSchema(), "", false));
+                    fields.add(new KafkaTopicFieldDescription(name, BigintType.BIGINT, mapping, "", null, "", false));
                     break;
                 case BOOLEAN:
-                    fields.add(new KafkaTopicFieldDescription(name, BooleanType.BOOLEAN, mapping, "", getDataSchema(), "", false));
+                    fields.add(new KafkaTopicFieldDescription(name, BooleanType.BOOLEAN, mapping, "", null, "", false));
                     break;
                 case STRING:
-                    fields.add(new KafkaTopicFieldDescription(name, VarcharType.VARCHAR, mapping, "", getDataSchema(), "", false));
+                    fields.add(new KafkaTopicFieldDescription(name, VarcharType.VARCHAR, mapping, "", null, "", false));
                     break;
                 case MESSAGE:
                     // Do not support recursive data structure
                     if (fd.isRepeated() || fd.getMessageType() == descriptor) {
-                        fields.add(new KafkaTopicFieldDescription(name, VarcharType.VARCHAR, mapping, "", getDataSchema(), "", false));
+                        fields.add(new KafkaTopicFieldDescription(name, VarcharType.VARCHAR, mapping, "", null, "", false));
                     }
                     else {
                         generateFields(fields, fd.getMessageType(), name, mapping);
                     }
                     break;
                 default:
-                    fields.add(new KafkaTopicFieldDescription(name, VarcharType.VARCHAR, mapping, "", getDataSchema(), "", false));
+                    fields.add(new KafkaTopicFieldDescription(name, VarcharType.VARCHAR, mapping, "", null, "", false));
                     break;
             }
         }
